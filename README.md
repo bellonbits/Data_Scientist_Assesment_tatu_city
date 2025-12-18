@@ -1,246 +1,117 @@
-# Data Scientist Technical Assessment Report
+# Data Scientist Technical Task – Tatu City
 
-## Overview
+## Objective
 
-This assessment analyzes call-level data provided across seven source files. The objectives are to:
-1. Consolidate the data into a single SQL-ready table
-2. Answer analytical questions using SQL over the full historical period
-3. Build a Python time-series forecast of future call volumes
-4. Analyze relationships between operational metrics and customer experience
-5. Demonstrate structured reasoning through a conceptual grouping exercise
+The objective of this analysis is to understand historical call volume and call-handling behavior in order to:
+- Quantify operational demand over time
+- Identify drivers of call inefficiency and customer dissatisfaction
+- Forecast future call volumes to support capacity planning and resource allocation
 
-All results reflect the **full time period covered by Files 1–7**.
+This analysis supports data-driven decision-making for operational planning and service optimization at Tatu City.
 
 ---
 
-## 1) Data Preparation: Combining Files 1–7
+## Data
 
-All seven files share an identical schema and were combined by vertically stacking the records.
+### Source
+The dataset consists of seven call-level data files (Files 1–7), each containing detailed records of customer calls over multiple years. All files share an identical schema and were consolidated into a single analytical table.
 
-### Approach
-- Load each file
-- Standardize column names and data types
-- Append all rows into a single table
+### Key Features
+- `startdatetime`: Timestamp of call initiation  
+- `userid`: Identifier of the agent handling the call  
+- `calltype`: Type of call (e.g., Inbound_Queue)  
+- `disconnecttype`: How the call ended (client, peer, transfer, etc.)  
+- `total_handle_time`: Total duration of the call  
+- `total_hold_time`: Time the caller spent on hold  
+- `total_talk_time`: Time spent speaking with an agent  
+- `average_of_average_survey`: Customer satisfaction metric  
 
-### Resulting Table
-**Schema:** `call_schema`  
-**Table:** `call_data`
-
-This consolidated table was used for all subsequent SQL and Python analyses.
-
----
-
-## SQL Analysis
-
-### 2) How many unique users are there?
-
-**Method:**  
-Count distinct `userid` values across the full dataset.
-
-**Result:**  
-Returns the total number of unique users who handled at least one call.
+### Target Variable
+- Monthly call volume (for forecasting)
+- Operational and experience metrics (for correlation analysis)
 
 ---
 
-### 3) Who are the top 10 users who took calls?
+## Approach
 
-**Method:**  
-Group by `userid` and order by total call count.
+### 1. Data Cleaning and Preprocessing
+- Combined Files 1–7 into a single dataset
+- Standardized column names and data types
+- Imputed missing numeric values with zeros where appropriate
+- Handled missing categorical values using explicit labels
 
-**Result:**  
-Identifies the ten most active users along with the number of calls handled by each.
+### 2. Exploratory Data Analysis
+- Analyzed call volume trends by month and year
+- Identified seasonality and long-term trends
+- Examined distributions of hold time, talk time, and handle time
+- Compared survey scores across disconnect types
 
----
+### 3. Feature Engineering
+- Aggregated call data at a monthly level
+- Extracted year and month components for time-series analysis
+- Created ratio-based metrics (e.g., peer disconnect ratio)
 
-### 4) What is the average total handle time of a call?
-
-**Method:**  
-Compute the mean of `total_handle_time`.
-
-**Result:**  
-Represents the average end-to-end time required to handle a call.
-
----
-
-### 5) Top 10 users with the highest ratio of peer disconnects
-
-**Method:**  
-For each user:
-- Count calls with `disconnecttype = 'peer'`
-- Divide by total calls handled
-
-**Findings:**
-- Peer disconnect ratios vary meaningfully by user
-- Peer disconnects differ from client disconnects in that they are typically **system- or agent-side terminations**, not customer-initiated
-
-**Inference:**
-High peer disconnect ratios suggest potential tooling, network, or workflow issues rather than customer dissatisfaction.
+### 4. Modeling and Evaluation
+- Built a time-series forecasting model to predict future call volumes
+- Evaluated model behavior using historical trends and confidence intervals
+- Performed correlation and statistical testing to validate behavioral insights
 
 ---
 
-### 6) How many inbound queue calls were received per month?
+## Results
 
-**Method:**  
-Filter `calltype = 'Inbound_Queue'` and aggregate by month.
-
-**Result:**  
-Monthly inbound call volumes showing clear seasonality.
-
----
-
-### 7) Percentage difference in inbound calls (2023 vs 2024)
-
-**Method:**  
-- Aggregate inbound calls by year
-- Compute year-over-year percentage change
-
-**Result:**  
-Inbound queue call volume declined from 2023 to 2024, indicating reduced demand or improved self-service.
-
----
-
-### 8) Month and year with the most inbound queue calls
-
-**Method:**  
-Order monthly inbound call counts in descending order.
-
-**Result:**  
-June 2024 had the highest inbound queue volume.
-
----
-
-## Time-Series Forecasting (Python)
-
-### 9) How many calls were taken per month during 2023 and 2024?
-
-**Observation:**
-- Call volume declines steadily through 2023
-- Strong seasonality is present
-- A notable spike occurs in June 2024
-
-These patterns informed model selection.
-
----
-
-### 10) Forecasted call count per month in 2025 and 2026
-
-**Output:**
-- Forecasts were generated for January 2025 through December 2026
-- Call volumes maintain seasonal structure
-- Baseline volume gradually declines
-- Mid-year peaks persist, including a pronounced spike in June 2026
-
----
-
-### 11) What model was used?
-
-**Model:**  
+### Best Performing Model
 **Seasonal ARIMA (SARIMA)**  
-**Specification:** ARIMA(1,1,1) × (1,1,1,12)
+Specification: ARIMA(1,1,1) × (1,1,1,12)
+
+### Key Metrics and Findings
+- Strong seasonality in monthly call volume
+- Overall decline in baseline call volume from 2023 to 2024
+- Hold time and handle time show a strong positive correlation (r ≈ 0.75)
+- Peer disconnects are associated with significantly lower customer satisfaction
+- Client disconnects occur at higher hold times, indicating customer abandonment
+
+### Interpretation
+The results suggest that wait times and system reliability are the dominant drivers of both operational inefficiency and customer dissatisfaction.
 
 ---
 
-### 12) Why this model?
+## Business Insights
 
-SARIMA was selected because:
-- The data is monthly with a clear 12-month seasonal cycle
-- The series is non-stationary
-- The model explicitly captures trend and seasonality
-- It is interpretable and appropriate for 1–2 year operational forecasts
+- **Capacity Planning:**  
+  Forecasted call volumes for 2025–2026 enable proactive staffing and scheduling decisions.
 
----
+- **Customer Experience:**  
+  Reducing hold times can significantly improve handle time efficiency and reduce client disconnects.
 
-### 13) Visualization
+- **Operational Reliability:**  
+  Peer disconnects represent system or agent-side failures and should be prioritized for technical remediation.
 
-A time-series plot was created showing:
-- Actual monthly call volume (2023–2024)
-- Forecasted values (2025–2026)
-- Confidence intervals reflecting increasing uncertainty over time
-
-This visualization clearly communicates trend, seasonality, and forecast risk.
+- **Performance Management:**  
+  Agent-level disconnect ratios can be used to identify training or tooling opportunities.
 
 ---
 
-## Correlation & Behavioral Analysis
+## Limitations & Next Steps
 
-### 14) Correlation between hold time and handle time
+### Limitations
+- Forecasting relies solely on historical call data and does not incorporate external drivers (e.g., policy changes, marketing campaigns).
+- Survey responses are sparsely populated, which may bias satisfaction analysis.
+- Outliers (e.g., sudden spikes in volume) may reflect one-off events not explicitly modeled.
 
-**Result:**
-- Pearson correlation: **0.75**
-
-**Conclusion:**
-There is a strong positive correlation. Hold time is a major driver of total handle time.
-
----
-
-### 15) How is talk time affected by hold time?
-
-**Result:**
-- Pearson correlation: **0.45**
-
-**Conclusion:**
-Talk time is only moderately affected by hold time. Longer waits do not necessarily lead to longer conversations.
+### Next Steps
+- Incorporate external or exogenous variables into the forecast
+- Test alternative models (e.g., Prophet, ETS) for comparison
+- Segment forecasts by call type or customer group
+- Perform causal analysis to quantify the impact of operational changes
 
 ---
 
-### 16) Correlation between survey scores and disconnect type
+## How to Run
 
-**Findings:**
-- Peer disconnects have the **lowest survey scores**
-- Transfers and client disconnects have significantly higher scores
+1. Load the consolidated dataset into PostgreSQL.
+2. Execute the provided SQL scripts to reproduce aggregations and metrics.
+3. Run the Python notebooks to generate forecasts, correlations, and visualizations.
+4. Review plots and summary tables for interpretation and decision-making.
 
-**Conclusion:**
-System- or agent-side disconnects are strongly associated with poor customer experience.
-
----
-
-### 17) Correlation between hold time and disconnect type
-
-**Findings:**
-- Client disconnects have higher average hold times than peer disconnects
-- Statistical testing confirms this difference is significant (p < 0.001)
-
-**Conclusion:**
-Long hold times increase the likelihood of customer-initiated disconnects, indicating abandonment behavior.
-
----
-
-## 18) Shape Grouping Exercise
-
-### Objective
-Group shapes based on their characteristics, listing all valid groupings.
-
-### Key Groupings
-
-**By edge type**
-- Straight-edged (polygons): rectangle, square, pentagon, parallelogram
-- Curved: circle, ring, crescent
-
-**By symmetry**
-- Highly symmetric: circle, square, ring
-- Partially symmetric: rectangle, pentagon
-- Asymmetric: parallelogram, crescent
-
-**By structure**
-- Simple shapes: square, rectangle, circle
-- Compound shapes: ring, crescent
-
-**By convexity**
-- Convex: rectangle, square, pentagon, circle
-- Non-convex: crescent, ring
-
-### Conclusion
-There is no single correct grouping; the classification depends on which characteristic is prioritized. Multiple groupings are logically valid.
-
----
-
-## Final Summary
-
-This analysis demonstrates:
-- Effective data consolidation and SQL querying
-- Sound statistical reasoning
-- Appropriate time-series modeling
-- Clear interpretation of operational and customer-experience metrics
-- Structured, flexible problem-solving
-
-The results provide actionable insights into call volume trends, operational efficiency, and customer behavior.
+All code and queries are designed to be reproducible and modular.
