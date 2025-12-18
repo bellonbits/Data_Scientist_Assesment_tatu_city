@@ -113,8 +113,7 @@ This approach provides a strong balance between predictive accuracy and business
 
 The chart below shows historical monthly call volumes alongside the forecasted values for 2025 and 2026.
 
-![Monthly Call Volume: Actuals and Forecast](<img width="1309" height="667" alt="image" src="https://github.com/user-attachments/assets/0fef07d1-a760-48d5-823e-6ba0e7a436f6" />
-)
+<img width="1309" height="667" alt="image" src="https://github.com/user-attachments/assets/0fef07d1-a760-48d5-823e-6ba0e7a436f6" />
 
 **Interpretation:**
 - Historical data shows declining call volumes with consistent seasonality.
